@@ -12,18 +12,18 @@ public class Subscription {
 	private int id;
 	
 	@Column(name = "post_id")
-	private int postId;
+	private long postId;
 	
 	@Column(name = "url")
 	private String url;
 	
 	@Column(name = "last_comment_id")
-	private int lastCommentId;
+	private long lastCommentId;
 	
 	public Subscription() {
 	}
 	
-	public Subscription(int postId, String url, int lastCommentId) {
+	public Subscription(long postId, String url, long lastCommentId) {
 		this.postId = postId;
 		this.url = url;
 		this.lastCommentId = lastCommentId;
@@ -37,7 +37,7 @@ public class Subscription {
 		this.id = id;
 	}
 	
-	public int getPostId() {
+	public long getPostId() {
 		return postId;
 	}
 	
@@ -53,7 +53,7 @@ public class Subscription {
 		this.url = url;
 	}
 	
-	public int getLastCommentId() {
+	public long getLastCommentId() {
 		return lastCommentId;
 	}
 	
