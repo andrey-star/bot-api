@@ -35,4 +35,13 @@ public class ModerationComment {
     public void setText(String text) {
         this.text = text;
     }
+    
+    @Override
+    public String toString() {
+        return "ModerationComment{" +
+                "postId=" + postId +
+                ", commentId=" + commentId +
+                ", text='" + text + '\'' +
+                '}';
+    }
 }
