@@ -1,12 +1,12 @@
 package ru.ok.botapi.comment;
 
-public class Comment {
+public class ModerationComment {
     
     private long postId;
     private long commentId;
     private String text;
     
-    public Comment(long postId, long commentId, String text) {
+    public ModerationComment(long postId, long commentId, String text) {
         this.postId = postId;
         this.commentId = commentId;
         this.text = text;
