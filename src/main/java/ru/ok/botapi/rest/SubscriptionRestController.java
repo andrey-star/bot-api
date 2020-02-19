@@ -5,12 +5,16 @@ import org.springframework.web.bind.annotation.*;
 import ru.ok.botapi.entity.Subscription;
 import ru.ok.botapi.service.SubscriptionService;
 
+import javax.annotation.Resource;
 import java.util.List;
 
 @RestController
 @RequestMapping("/bot-api")
 public class SubscriptionRestController {
 
+	private final String BASE_URI = "/subscriptions";
+	
+	@Resource
 	private SubscriptionService subscriptionService;
 	
 	@Autowired
@@ -18,12 +22,12 @@ public class SubscriptionRestController {
 		this.subscriptionService = subscriptionService;
 	}
 	
-	@GetMapping("/subscriptions")
+	@GetMapping(BASE_URI)
 	public List<Subscription> findAll() {
 		return subscriptionService.findAll();
 	}
 	
-	@GetMapping("/subscriptions/{subscriptionId}")
+	@GetMapping(BASE_URI + "/{subscriptionId}")
 	public Subscription findById(@PathVariable int subscriptionId) {
 		Subscription subscription = subscriptionService.findById(subscriptionId);
 		if (subscription == null) {
@@ -32,20 +36,20 @@ public class SubscriptionRestController {
 		return subscription;
 	}
 	
-	@PostMapping("/subscriptions")
+	@PostMapping(BASE_URI)
 	public Subscription addSubscription(@RequestBody Subscription subscription) {
 		subscription.setId(0);
 		subscriptionService.save(subscription);
 		return subscription;
 	}
 	
-	@PutMapping("/subscriptions")
+	@PutMapping(BASE_URI)
 	public Subscription updateSubscription(@RequestBody Subscription subscription) {
 		subscriptionService.save(subscription);
 		return subscription;
 	}
 	
-	@DeleteMapping("/subscriptions/{subscriptionId}")
+	@DeleteMapping(BASE_URI + "/{subscriptionId}")
 	public String deleteSubscription(@PathVariable int subscriptionId) {
 		Subscription subscription = subscriptionService.findById(subscriptionId);
 		if (subscription == null) {

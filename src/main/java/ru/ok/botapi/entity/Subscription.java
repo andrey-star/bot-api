@@ -17,7 +17,7 @@ public class Subscription {
 	@Column(name = "url")
 	private String url;
 	
-	@Column(name = "last_comment_id")
+	@Column(name = "last_comment_id", columnDefinition = "integer default 0")
 	private long lastCommentId;
 	
 	public Subscription() {
