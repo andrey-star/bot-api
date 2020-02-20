@@ -5,7 +5,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.ok.botapi.comment.ModerationComment;
 import ru.ok.botapi.entity.Subscription;
-import ru.ok.botapi.remote.Pair;
+import ru.ok.botapi.util.Pair;
 import ru.ok.botapi.remote.RMIComment;
 import ru.ok.botapi.remote.RMICommentInterface;
 
