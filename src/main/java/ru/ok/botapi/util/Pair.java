@@ -1,4 +1,4 @@
-package ru.ok.botapi.remote;
+package ru.ok.botapi.util;
 
 public class Pair {
     private long postId;
