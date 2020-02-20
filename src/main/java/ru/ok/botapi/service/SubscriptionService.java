@@ -10,6 +10,8 @@ public interface SubscriptionService {
 	
 	Subscription findById(int id);
 	
+	List<Subscription> findByPostId(long postId);
+	
 	void save(Subscription subscription);
 	
 	void deleteById(int id);

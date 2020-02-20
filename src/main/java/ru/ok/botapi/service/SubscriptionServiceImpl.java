@@ -31,7 +31,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 		if (result.isPresent()) {
 			return result.get();
 		}
-		throw new RuntimeException("Did not find post id - " + id);
+		throw new RuntimeException("Did not find subscription id - " + id);
+	}
+	
+	@Override
+	public List<Subscription> findByPostId(long postId) {
+		return subscriptionRepository.findByPostId(postId);
 	}
 	
 	@Override
