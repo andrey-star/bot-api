@@ -33,12 +33,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 		}
 		throw new RuntimeException("Did not find subscription id - " + id);
 	}
-
+	
 	@Override
 	public List<Subscription> findByPostId(long postId) {
 		return subscriptionRepository.findByPostId(postId);
 	}
-
+	
 	@Override
 	public void save(Subscription subscription) {
 		subscriptionRepository.save(subscription);
