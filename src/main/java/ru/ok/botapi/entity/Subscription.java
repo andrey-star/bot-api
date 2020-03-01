@@ -1,6 +1,8 @@
 package ru.ok.botapi.entity;
 
 import javax.persistence.*;
+import java.sql.Timestamp;
+import java.time.Instant;
 
 @Entity
 @Table(name = "subscriptions")
@@ -20,14 +22,8 @@ public class Subscription {
 	@Column(name = "last_comment_id", columnDefinition = "integer default 0")
 	private long lastCommentId;
 	
-	public Subscription() {
-	}
-	
-	public Subscription(long postId, String url, long lastCommentId) {
-		this.postId = postId;
-		this.url = url;
-		this.lastCommentId = lastCommentId;
-	}
+	@Column(name = "timestamp")
+	private Timestamp createdAt;
 	
 	public int getId() {
 		return id;
@@ -41,7 +37,7 @@ public class Subscription {
 		return postId;
 	}
 	
-	public void setPostId(int postId) {
+	public void setPostId(long postId) {
 		this.postId = postId;
 	}
 	
@@ -57,8 +53,21 @@ public class Subscription {
 		return lastCommentId;
 	}
 	
-	public void setLastCommentId(int lastCommentId) {
+	public void setLastCommentId(long lastCommentId) {
 		this.lastCommentId = lastCommentId;
+	}
+	
+	public Timestamp getCreatedAt() {
+		return createdAt;
+	}
+	
+	public void setCreatedAt(Timestamp createdAt) {
+		this.createdAt = createdAt;
+	}
+	
+	@PrePersist
+	public void prePersist() {
+		createdAt = Timestamp.from(Instant.now());
 	}
 	
 	@Override
@@ -68,6 +77,7 @@ public class Subscription {
 				", postId=" + postId +
 				", url='" + url + '\'' +
 				", lastCommentId=" + lastCommentId +
+				", createdAt=" + createdAt +
 				'}';
 	}
 }
