@@ -1,5 +1,9 @@
 package ru.ok.botapi.service;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -14,77 +18,111 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
+import java.util.concurrent.*;
 
 @Service
+@EnableAsync
 @EnableScheduling
 public class BusinessServiceImpl implements BusinessService {
-    @Resource
-    private SubscriptionService subscriptionService;
-
-    @Resource
-    private SendService sendService;
-
-    private final static String serverURI = "//localhost/journal";
-    Queue<RMIComment> queue = new ArrayDeque<>();
-    private static RMICommentInterface lookUp;
-
-    static {
-        try {
-            lookUp = (RMICommentInterface) Naming.lookup(serverURI);
-        } catch (NotBoundException | MalformedURLException | RemoteException e) {
-            //TODO: readable exception messages
-            e.printStackTrace();
-        }
-    }
-    @Override
-    @Scheduled(fixedRate = 10000)
-    public void getNewComments() {
-        List<Subscription> all = subscriptionService.findAll();
-        List<Pair> forRequest = new ArrayList<>();
-        for (Subscription sub : all) {
-            forRequest.add(new Pair(sub.getPostId(), sub.getLastCommentId()));
-        }
-        try {
-            List<RMIComment> response = lookUp.getComments(forRequest);
-            //addAll operation is optional, might cause some troubles later
-            queue.addAll(response);
-            System.out.println("Comments pulled: " + response);
-        } catch (RemoteException e) {
-            //TODO: readable exception message
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    @Scheduled(fixedRate = 1000)
-    public void sendNewComment() {
-        List<Subscription> all = subscriptionService.findAll();
-        //very inefficient, but ok for a skeleton
-        if (!queue.isEmpty()) {
-            RMIComment comment = queue.poll();
-            String url = getUrl(all,  comment);
-            if (url != null) {
-                ModerationComment toSend = new ModerationComment(comment.getPostId(), comment.getId(), comment.getText());
-                sendService.sendComment(toSend, url);
-                System.out.println("Comment sent: " + toSend);
-            }
-        }
-    }
-
-    String getUrl(List<Subscription> all, RMIComment comment) {
-        for (Subscription sub : all) {
-            if (sub.getPostId() == comment.getPostId()) {
-                return sub.getUrl();
-            }
-        }
-        return null;
-    }
-
-
-
-
+	
+	static final Logger logger = LogManager.getLogger(BusinessServiceImpl.class.getName());
+	
+	private final static String serverURI = "//localhost/journal";
+	
+	//TODO
+	private static final int MAX_THREADS = 20;
+	private static final int MIN_THREADS = 5;
+	private static final int UPPER_THRESHOLD = 25;
+	private static final int LOWER_THRESHOLD = 5;
+	private static final int THREAD_QUOTIENT = 2;
+	private static int threadCount = MIN_THREADS;
+	
+	private static RMICommentInterface lookUp;
+	
+	static {
+		try {
+			lookUp = (RMICommentInterface) Naming.lookup(serverURI);
+		} catch (NotBoundException | MalformedURLException | RemoteException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
+	
+	private ArrayBlockingQueue<RMIComment> queue = new ArrayBlockingQueue<>(100);
+	
+	//	private final ExecutorService executorService = Executors.newCachedThreadPool();
+	private ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+	@Resource
+	private SubscriptionService subscriptionService;
+	@Resource
+	private SendService sendService;
+	
+	@Override
+	@Async
+	@Scheduled(fixedDelay = 5000)
+	public void getNewComments() {
+		List<Subscription> all = subscriptionService.findAll();
+		List<Pair> forRequest = new ArrayList<>();
+		for (Subscription sub : all) {
+			forRequest.add(new Pair(sub.getPostId(), sub.getLastCommentId()));
+		}
+		try {
+			List<RMIComment> response = lookUp.getComments(forRequest);
+			logger.info("Comments pulled: " + response);
+			for (RMIComment rmiComment : response) {
+				queue.put(rmiComment);
+			}
+		} catch (RemoteException | InterruptedException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
+	
+	@Override
+	@Async
+	@Scheduled(fixedDelay = 1000)
+	public void sendNewComment() {
+		while (!queue.isEmpty()) {
+			if (queue.size() / threadCount > UPPER_THRESHOLD && threadCount < MAX_THREADS) {
+				increasePoolSize();
+			} else if (queue.size() / threadCount < LOWER_THRESHOLD && threadCount > MIN_THREADS) {
+				decreasePoolSize();
+			}
+			RMIComment comment = queue.remove();
+			List<Subscription> byPostId = subscriptionService.findByPostId(comment.getPostId());
+			if (byPostId.isEmpty()) {
+				logger.warn("Couldn't find subscription to postId: " + comment.getPostId());
+				continue;
+			}
+			String url = byPostId.get(0).getUrl();
+			ModerationComment toSend = new ModerationComment(comment.getPostId(), comment.getId(), comment.getText());
+			Runnable sendComment = () -> {
+				try {
+					sendService.sendComment(toSend, url);
+				} catch (Exception e) {
+					logger.error(e.getMessage(), e);
+				}
+			};
+			executorService.execute(sendComment);
+		}
+	}
+	
+	private void shutdownPool() {
+		executorService.shutdown();
+		try {
+			executorService.awaitTermination(1000, TimeUnit.MILLISECONDS);
+		} catch (InterruptedException e) {
+			logger.error(e.getMessage(), e);
+		}
+	}
+	
+	private void increasePoolSize() {
+		shutdownPool();
+		executorService = Executors.newFixedThreadPool(threadCount * THREAD_QUOTIENT);
+	}
+	
+	private void decreasePoolSize() {
+		shutdownPool();
+		executorService = Executors.newFixedThreadPool(threadCount / THREAD_QUOTIENT);
+	}
+	
 }

@@ -1,6 +1,5 @@
 package ru.ok.botapi.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.ok.botapi.dao.SubscriptionRepository;
 import ru.ok.botapi.entity.Subscription;
@@ -14,11 +13,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 	
 	@Resource
 	private SubscriptionRepository subscriptionRepository;
-	
-	@Autowired
-	public SubscriptionServiceImpl(SubscriptionRepository subscriptionRepository) {
-		this.subscriptionRepository = subscriptionRepository;
-	}
 	
 	@Override
 	public List<Subscription> findAll() {
