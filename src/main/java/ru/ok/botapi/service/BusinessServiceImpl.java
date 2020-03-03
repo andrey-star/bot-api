@@ -59,7 +59,7 @@ public class BusinessServiceImpl implements BusinessService {
 	
 	@Override
 	@Async
-	@Scheduled(fixedDelay = 5000) // TODO: delay or rate
+	@Scheduled(fixedDelay = 5000)
 	public void getNewComments() {
 		List<Subscription> all = subscriptionService.findAll();
 		List<Pair> forRequest = new ArrayList<>();
