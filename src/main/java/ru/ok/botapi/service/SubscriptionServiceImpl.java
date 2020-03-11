@@ -1,6 +1,5 @@
 package ru.ok.botapi.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.ok.botapi.dao.SubscriptionRepository;
 import ru.ok.botapi.entity.Subscription;
@@ -15,11 +14,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 	@Resource
 	private SubscriptionRepository subscriptionRepository;
 	
-	@Autowired
-	public SubscriptionServiceImpl(SubscriptionRepository subscriptionRepository) {
-		this.subscriptionRepository = subscriptionRepository;
-	}
-	
 	@Override
 	public List<Subscription> findAll() {
 		return subscriptionRepository.findAll();
@@ -31,7 +25,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 		if (result.isPresent()) {
 			return result.get();
 		}
-		throw new RuntimeException("Did not find post id - " + id);
+		throw new RuntimeException("Did not find subscription id - " + id);
+	}
+	
+	@Override
+	public List<Subscription> findByPostId(long postId) {
+		return subscriptionRepository.findByPostId(postId);
 	}
 	
 	@Override
