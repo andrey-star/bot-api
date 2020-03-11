@@ -9,17 +9,21 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.ok.botapi.comment.ModerationComment;
 import ru.ok.botapi.entity.Subscription;
-import ru.ok.botapi.util.Pair;
 import ru.ok.botapi.remote.RMIComment;
 import ru.ok.botapi.remote.RMICommentInterface;
+import ru.ok.botapi.util.Pair;
 
 import javax.annotation.Resource;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @EnableAsync
@@ -30,7 +34,6 @@ public class BusinessServiceImpl implements BusinessService {
 	
 	private final static String serverURI = "//localhost/journal";
 	
-	//TODO
 	private static final int MAX_THREADS = 20;
 	private static final int MIN_THREADS = 5;
 	private static final int UPPER_THRESHOLD = 25;
@@ -50,7 +53,6 @@ public class BusinessServiceImpl implements BusinessService {
 	
 	private ArrayBlockingQueue<RMIComment> queue = new ArrayBlockingQueue<>(100);
 	
-	//	private final ExecutorService executorService = Executors.newCachedThreadPool();
 	private ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
 	@Resource
 	private SubscriptionService subscriptionService;
@@ -93,13 +95,16 @@ public class BusinessServiceImpl implements BusinessService {
 				logger.warn("Couldn't find subscription to postId: " + comment.getPostId());
 				continue;
 			}
-			String url = byPostId.get(0).getUrl();
+			Subscription subscription = byPostId.get(0);
+			String url = subscription.getUrl();
 			ModerationComment toSend = new ModerationComment(comment.getPostId(), comment.getId(), comment.getText());
 			Runnable sendComment = () -> {
 				try {
 					sendService.sendComment(toSend, url);
+					subscription.setLastCommentId(comment.getId());
+					subscriptionService.save(subscription);
 				} catch (Exception e) {
-					logger.error(e.getMessage(), e);
+					logger.error("Failed to submit comment", e);
 				}
 			};
 			executorService.execute(sendComment);

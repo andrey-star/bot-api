@@ -12,10 +12,10 @@ import ru.ok.botapi.comment.ModerationComment;
 public class SendServiceImpl implements SendService {
 	
 	static final Logger logger = LogManager.getLogger(SendServiceImpl.class.getName());
+	private static final RestTemplate restTemplate = new RestTemplate();
 	
 	@Override
 	public void sendComment(ModerationComment comment, String adminUrl) throws RestClientException {
-		RestTemplate restTemplate = new RestTemplate();
 		HttpEntity<ModerationComment> request = new HttpEntity<>(comment);
 		restTemplate.postForLocation(adminUrl, request, ModerationComment.class);
 		logger.info("Comment submitted: " + comment);
